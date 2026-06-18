@@ -62,6 +62,68 @@
       reveals.forEach(function (el) { el.classList.add("in"); });
     }
 
+    /* ---- Hero image slider ---- */
+    (function () {
+      var track = document.getElementById("slideTrack");
+      var slider = document.getElementById("heroSlider");
+      var dotsWrap = document.getElementById("slideDots");
+      if (!track || !slider) return;
+      var count = track.children.length, idx = 0, timer = null, dots = [];
+
+      for (var d = 0; d < count; d++) {
+        (function (n) {
+          var b = document.createElement("button");
+          b.setAttribute("aria-label", "Go to slide " + (n + 1));
+          b.addEventListener("click", function () { go(n); restart(); });
+          dotsWrap.appendChild(b); dots.push(b);
+        })(d);
+      }
+      function go(n) {
+        idx = (n + count) % count;
+        track.style.transform = "translateX(" + (-idx * 100) + "%)";
+        dots.forEach(function (dd, k) { dd.classList.toggle("active", k === idx); });
+      }
+      function next() { go(idx + 1); }
+      function prev() { go(idx - 1); }
+      function restart() { clearInterval(timer); timer = setInterval(next, 4200); }
+
+      var nb = document.getElementById("slideNext"), pb = document.getElementById("slidePrev");
+      if (nb) nb.addEventListener("click", function () { next(); restart(); });
+      if (pb) pb.addEventListener("click", function () { prev(); restart(); });
+      slider.addEventListener("mouseenter", function () { clearInterval(timer); });
+      slider.addEventListener("mouseleave", restart);
+
+      var x0 = null;
+      slider.addEventListener("touchstart", function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+      slider.addEventListener("touchend", function (e) {
+        if (x0 === null) return;
+        var dx = e.changedTouches[0].clientX - x0;
+        if (Math.abs(dx) > 40) { (dx < 0 ? next : prev)(); restart(); }
+        x0 = null;
+      }, { passive: true });
+
+      go(0); restart();
+    })();
+
+    /* ---- Cartoon cow parade (auto-generated) ---- */
+    (function () {
+      var wrap = document.getElementById("cowParade");
+      if (!wrap) return;
+      var cow = '<svg class="parade-cow" viewBox="0 0 90 64" aria-hidden="true">' +
+        '<rect x="24" y="40" width="7" height="16" rx="3.5" fill="#fff" stroke="#20342a" stroke-width="2.5"/>' +
+        '<rect x="56" y="40" width="7" height="16" rx="3.5" fill="#fff" stroke="#20342a" stroke-width="2.5"/>' +
+        '<ellipse cx="46" cy="32" rx="30" ry="18" fill="#fff" stroke="#20342a" stroke-width="3"/>' +
+        '<circle cx="40" cy="27" r="7" fill="#7a4a22"/><circle cx="55" cy="36" r="5" fill="#7a4a22"/>' +
+        '<path d="M75 24c7-2 9 7 4 12" fill="none" stroke="#20342a" stroke-width="3" stroke-linecap="round"/>' +
+        '<ellipse cx="16" cy="29" rx="12" ry="10" fill="#fff" stroke="#20342a" stroke-width="3"/>' +
+        '<ellipse cx="9" cy="20" rx="4.5" ry="3.5" fill="#fff" stroke="#20342a" stroke-width="2.5"/>' +
+        '<path d="M18 19c-1-6 5-6 5-1" fill="#ffe0a6" stroke="#20342a" stroke-width="2.5"/>' +
+        '<circle cx="13" cy="28" r="2.2" fill="#20342a"/>' +
+        '<ellipse cx="7" cy="34" rx="5.5" ry="4.5" fill="#ffc1d6" stroke="#20342a" stroke-width="2"/></svg>';
+      var html = ""; for (var k = 0; k < 10; k++) html += cow;
+      wrap.innerHTML = html;
+    })();
+
     /* ---- Contact form (Web3Forms) ---- */
     var form = document.getElementById("enquiryForm");
     var status = document.getElementById("formStatus");
