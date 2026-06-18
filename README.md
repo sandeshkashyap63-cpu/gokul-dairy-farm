@@ -56,6 +56,10 @@ python3 -m http.server 8000
 ```
 then open http://localhost:8000
 
-## Deploy
-Any static host works (GitHub Pages, Netlify, or the existing gokuldairyfarm.com host). Upload the
-whole `gokul-dairy-farm` folder contents to the web root.
+## Deploy — already live on GitHub Pages
+- **Repo:** https://github.com/sandeshkashyap63-cpu/gokul-dairy-farm
+- **Live URL:** https://sandeshkashyap63-cpu.github.io/gokul-dairy-farm/
+
+To publish updates: commit and `git push` — GitHub Pages rebuilds automatically in a minute or two.
+To point the real domain (gokuldairyfarm.com) here later, add a `CNAME` file with the domain and set
+the DNS records, or upload this folder's contents to the existing host's web root instead.
