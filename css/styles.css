@@ -211,16 +211,12 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
 .community__points .ico { color: var(--green-deep); background: var(--gold-2); border-radius: 50%; padding: 5px; width: 26px; height: 26px; margin-top: 2px; }
 .community__cta { margin-top: 32px; }
 .community__mascot { position: relative; display: grid; place-items: center; }
-.community__mascot-ring { position: relative; width: min(400px, 100%); aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center; }
-.community__mascot-ring::before { content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px dashed rgba(216,179,91,.5); animation: spin 44s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.community__badge { width: 80%; aspect-ratio: 1; border-radius: 50%; display: grid; place-items: center;
-  background: radial-gradient(circle at 50% 32%, #3e6042, #28381f); box-shadow: var(--shadow-lg), inset 0 0 0 2px rgba(216,179,91,.3);
-  animation: floaty2 5s ease-in-out infinite; }
-.community__badge svg { width: 80%; height: auto; filter: drop-shadow(0 10px 12px rgba(0,0,0,.3)); }
-@keyframes floaty2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
-.community__speech { position: absolute; top: 2%; right: -2%; background: #fff; color: var(--green-deep); font-family: var(--font-head);
-  font-style: italic; font-size: .98rem; padding: 12px 18px; border-radius: 16px 16px 16px 4px; box-shadow: var(--shadow-md); max-width: 215px; z-index: 2; }
+.community__mascot-frame { width: min(440px, 100%); border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: var(--shadow-lg); border: 1px solid rgba(216,179,91,.35); animation: floaty2 6s ease-in-out infinite; }
+.community__mascot-frame img { width: 100%; display: block; }
+@keyframes floaty2 { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+.community__speech { position: absolute; top: -12px; right: -4px; background: #fff; color: var(--green-deep); font-family: var(--font-head);
+  font-style: italic; font-size: .98rem; padding: 12px 18px; border-radius: 16px 16px 16px 4px; box-shadow: var(--shadow-md); max-width: 220px; z-index: 3; }
 
 /* ---------- Breeds ---------- */
 .breeds { background: var(--cream-2); }
@@ -357,7 +353,7 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
 @media (prefers-reduced-motion: reduce) {
   .reveal { opacity: 1; transform: none; transition: none; }
   html { scroll-behavior: auto; }
-  .community__badge, .community__mascot-ring::before, .hero__slide { animation: none !important; }
+  .community__mascot-frame, .hero__slide { animation: none !important; }
 }
 
 /* ---------- Responsive ---------- */

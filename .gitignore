@@ -1,3 +1,5 @@
 .DS_Store
 Thumbs.db
 *.log
+# original high-res source images (kept locally, optimized JPGs are committed)
+images/originals/
