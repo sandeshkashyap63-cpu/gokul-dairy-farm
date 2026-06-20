@@ -144,7 +144,7 @@
               draw(Math.round(currentProgress * (COUNT - 1)));
             }
           };
-          im.src = "ezgif-3429664a03a5a981-jpg/ezgif-frame-" + pad(i + 1) + ".jpg";
+          im.src = "images/hero-frames/ezgif-frame-" + pad(i + 1) + ".jpg";
           imgs[i] = im;
         })(i);
       }
