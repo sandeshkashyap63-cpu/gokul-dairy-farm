@@ -74,7 +74,9 @@
       reveals.forEach(function (el) { el.classList.add("in"); });
     }
 
-    /* ---- Hero: scroll-scrubbed milk animation (Android-safe) ---- */
+    /* ---- Hero: scroll-scrubbed animation ---- */
+    /* Desktop: canvas approach (smooth, all 215 frames)
+       Mobile/Android: IMG tag approach (reliable, ~20 keyframes) */
     (function () {
       var canvas = document.getElementById("heroCanvas");
       var seq = document.getElementById("heroSeq");
@@ -87,52 +89,135 @@
 
       /* ---- Device detection ---- */
       var ua = navigator.userAgent || "";
-      var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+      var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua)
+                     || window.innerWidth <= 900;
       var isAndroid = /Android/i.test(ua);
 
-      /* On mobile: load every 5th frame to save memory (~43 frames ≈ 160MB vs 800MB).
-         On desktop: load all 215 frames for full smoothness. */
-      var STEP = isMobile ? 5 : 1;
-      var frameIndices = []; // 0-based indices into TOTAL_FRAMES
+      /* ---- Frame selection ---- */
+      /* Mobile: ~20 keyframes. Desktop: all 215 */
+      var STEP = isMobile ? 10 : 1;
+      var frameIndices = [];
       for (var fi = 0; fi < TOTAL_FRAMES; fi += STEP) frameIndices.push(fi);
-      /* Always include the last frame */
       if (frameIndices[frameIndices.length - 1] !== TOTAL_FRAMES - 1) frameIndices.push(TOTAL_FRAMES - 1);
       var COUNT = frameIndices.length;
 
-      /* ---- Canvas context (with Android-safe hints) ---- */
-      var ctx = null;
-      try {
-        ctx = canvas.getContext("2d", { willReadFrequently: false, desynchronized: true });
-      } catch (e) { /* ignore */ }
-      if (!ctx) {
-        try { ctx = canvas.getContext("2d"); } catch (e2) { /* ignore */ }
+      function pad(n) { return ("00" + n).slice(-3); }
+      function frameSrc(frameIdx) {
+        return "images/hero-frames/ezgif-frame-" + pad(frameIndices[frameIdx] + 1) + ".jpg";
       }
 
-      /* ---- IMG fallback for devices where canvas fails entirely ---- */
-      var fallbackImg = null;
-      if (!ctx) {
-        fallbackImg = document.createElement("img");
-        fallbackImg.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;";
-        fallbackImg.alt = canvas.getAttribute("aria-label") || "";
-        canvas.parentNode.insertBefore(fallbackImg, canvas);
+      /* ============================================================
+         MOBILE PATH: Use <img> tag — canvas is unreliable on Android
+         ============================================================ */
+      if (isMobile) {
+        /* Hide the canvas, create an <img> instead */
         canvas.style.display = "none";
+
+        var heroImg = document.createElement("img");
+        heroImg.className = "hero__canvas hero__canvas--img";
+        heroImg.alt = canvas.getAttribute("aria-label") || "";
+        heroImg.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;position:absolute;top:0;left:0;";
+        canvas.parentNode.insertBefore(heroImg, canvas);
+
+        /* Preload frames into JS Image objects */
+        var mImgs = new Array(COUNT);
+        var mLoaded = 0;
+        var mCurrentFrame = -1;
+
+        function mShowFrame(idx) {
+          if (idx === mCurrentFrame) return;
+          if (mImgs[idx] && mImgs[idx].complete && mImgs[idx].naturalWidth) {
+            heroImg.src = mImgs[idx].src;
+            mCurrentFrame = idx;
+          } else {
+            /* Find nearest loaded frame */
+            for (var d = 0; d < COUNT; d++) {
+              var lo = idx - d, hi = idx + d;
+              if (lo >= 0 && mImgs[lo] && mImgs[lo].complete && mImgs[lo].naturalWidth) {
+                heroImg.src = mImgs[lo].src; mCurrentFrame = lo; return;
+              }
+              if (hi < COUNT && mImgs[hi] && mImgs[hi].complete && mImgs[hi].naturalWidth) {
+                heroImg.src = mImgs[hi].src; mCurrentFrame = hi; return;
+              }
+            }
+          }
+        }
+
+        /* Show first frame immediately as background */
+        heroImg.src = frameSrc(0);
+
+        /* Load all keyframes */
+        for (var mi = 0; mi < COUNT; mi++) {
+          (function(idx) {
+            var im = new Image();
+            im.onload = function() {
+              mLoaded++;
+              if (idx === 0 && heroImg.src !== im.src) heroImg.src = im.src;
+            };
+            im.onerror = function() { mLoaded++; };
+            im.src = frameSrc(idx);
+            mImgs[idx] = im;
+          })(mi);
+        }
+
+        /* Scroll handler */
+        function mGetProgress() {
+          var rect = seq.getBoundingClientRect();
+          var total = rect.height - window.innerHeight;
+          if (total <= 0) return 0;
+          var p = (-rect.top) / total;
+          return p < 0 ? 0 : p > 1 ? 1 : p;
+        }
+
+        var mProgress = 0;
+        var mRaf = 0;
+
+        function mOnScroll() {
+          mProgress = mGetProgress();
+        }
+
+        function mAnimate() {
+          var f = Math.round(mProgress * (COUNT - 1));
+          mShowFrame(f);
+
+          /* Toggle hero text visibility */
+          if (heroContent) {
+            heroContent.classList.toggle("show-mobile-text", mProgress >= 0.75);
+          }
+          if (hero && (window.pageYOffset || window.scrollY) > 40) {
+            hero.classList.add("scrolled-in");
+          }
+          mRaf = requestAnimationFrame(mAnimate);
+        }
+
+        if (reduce) {
+          seq.style.height = "100vh";
+          heroImg.src = frameSrc(COUNT - 1);
+          if (heroContent) heroContent.classList.add("show-mobile-text");
+        } else {
+          window.addEventListener("scroll", mOnScroll, { passive: true });
+          document.addEventListener("touchmove", mOnScroll, { passive: true });
+          mOnScroll();
+          mRaf = requestAnimationFrame(mAnimate);
+        }
+
+        return; /* skip desktop path */
       }
 
-      /* ---- DPR: cap at 1 on mobile to prevent huge canvas buffers ---- */
-      var dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2);
-
+      /* ============================================================
+         DESKTOP PATH: Canvas approach (unchanged, full quality)
+         ============================================================ */
+      var ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
       var imgs = new Array(COUNT);
       var loaded = 0;
       var currentProgress = 0;
       var targetProgress = 0;
-      var lerpFactor = isMobile ? 0.15 : 0.08; // snappier on mobile
+      var lerpFactor = 0.08;
       var lastDrawnFrame = -1;
-      var canvasSized = false;
-
-      function pad(n) { return ("00" + n).slice(-3); }
 
       function sizeCanvas() {
-        if (!ctx) return false;
         var r = canvas.getBoundingClientRect();
         if (r.width < 1 || r.height < 1) return false;
         var w = Math.max(1, Math.round(r.width * dpr));
@@ -140,7 +225,6 @@
         if (canvas.width !== w || canvas.height !== h) {
           canvas.width = w;
           canvas.height = h;
-          canvasSized = true;
           return true;
         }
         return false;
@@ -148,44 +232,22 @@
 
       function nearest(i) {
         if (imgs[i] && imgs[i].complete && imgs[i].naturalWidth) return imgs[i];
-        /* search outward from i */
-        var lo = i - 1, hi = i + 1;
-        while (lo >= 0 || hi < COUNT) {
-          if (lo >= 0 && imgs[lo] && imgs[lo].complete && imgs[lo].naturalWidth) return imgs[lo];
-          if (hi < COUNT && imgs[hi] && imgs[hi].complete && imgs[hi].naturalWidth) return imgs[hi];
-          lo--; hi++;
+        for (var d = 1; d < COUNT; d++) {
+          if (i - d >= 0 && imgs[i - d] && imgs[i - d].complete && imgs[i - d].naturalWidth) return imgs[i - d];
+          if (i + d < COUNT && imgs[i + d] && imgs[i + d].complete && imgs[i + d].naturalWidth) return imgs[i + d];
         }
         return null;
       }
 
       function draw(i) {
-        if (fallbackImg) {
-          /* IMG fallback mode */
-          var im = nearest(i);
-          if (im && fallbackImg.src !== im.src) fallbackImg.src = im.src;
-          lastDrawnFrame = i;
-          return;
-        }
-        if (!ctx) return;
         var sizeChanged = sizeCanvas();
         if (i === lastDrawnFrame && !sizeChanged) return;
-        var im = nearest(i);
-        if (!im) return;
+        var im = nearest(i); if (!im) return;
         var cw = canvas.width, ch = canvas.height, iw = im.naturalWidth, ih = im.naturalHeight;
         if (cw <= 1 || ch <= 1 || iw <= 0 || ih <= 0) return;
         var s = Math.max(cw / iw, ch / ih), dw = iw * s, dh = ih * s;
-        try {
-          ctx.clearRect(0, 0, cw, ch);
-          ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
-        } catch (e) {
-          /* Canvas context lost — switch to IMG fallback */
-          fallbackImg = document.createElement("img");
-          fallbackImg.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;";
-          fallbackImg.src = im.src;
-          canvas.parentNode.insertBefore(fallbackImg, canvas);
-          canvas.style.display = "none";
-          ctx = null;
-        }
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
         lastDrawnFrame = i;
       }
 
@@ -197,85 +259,54 @@
         return p < 0 ? 0 : p > 1 ? 1 : p;
       }
 
-      /* ---- Animation loop ---- */
-      var rafId = 0;
       function updateAnimation() {
-        if (!reduce) {
-          currentProgress += (targetProgress - currentProgress) * lerpFactor;
-          if (Math.abs(targetProgress - currentProgress) < 0.0005) {
-            currentProgress = targetProgress;
-          }
-          var f = Math.round(currentProgress * (COUNT - 1));
-          draw(f);
-          if (heroContent) {
-            heroContent.classList.toggle("show-mobile-text", currentProgress >= 0.8);
-          }
+        currentProgress += (targetProgress - currentProgress) * lerpFactor;
+        if (Math.abs(targetProgress - currentProgress) < 0.0005) {
+          currentProgress = targetProgress;
         }
-        rafId = requestAnimationFrame(updateAnimation);
+        var f = Math.round(currentProgress * (COUNT - 1));
+        draw(f);
+        requestAnimationFrame(updateAnimation);
       }
 
-      function onScrollUpdate() {
+      function onScroll() {
         targetProgress = getScrollProgress();
         if (hero && (window.pageYOffset || window.scrollY) > 40) {
           hero.classList.add("scrolled-in");
         }
       }
 
-      /* ---- Load frames ---- */
-      function loadFrame(idx) {
-        var im = new Image();
-        im.decoding = "async";
-        im.onload = function () {
-          loaded++;
-          /* Draw first available frame immediately */
-          if (loaded === 1 && lastDrawnFrame < 0) {
-            sizeCanvas();
-            draw(idx);
-          }
-          if (loaded === COUNT && !reduce) {
-            targetProgress = getScrollProgress();
-            currentProgress = targetProgress;
-            draw(Math.round(currentProgress * (COUNT - 1)));
-          }
-        };
-        im.onerror = function () {
-          loaded++; /* count errors so we don't block */
-        };
-        /* frameIndices[idx] maps to 0-based frame number → +1 for filename */
-        im.src = "images/hero-frames/ezgif-frame-" + pad(frameIndices[idx] + 1) + ".jpg";
-        imgs[idx] = im;
+      /* Load all frames */
+      for (var i = 0; i < COUNT; i++) {
+        (function (idx) {
+          var im = new Image();
+          im.onload = function () {
+            loaded++;
+            if (idx === 0) draw(0);
+            if (loaded === COUNT) {
+              targetProgress = getScrollProgress();
+              currentProgress = targetProgress;
+              draw(Math.round(currentProgress * (COUNT - 1)));
+            }
+          };
+          im.onerror = function() { loaded++; };
+          im.src = frameSrc(idx);
+          imgs[idx] = im;
+        })(i);
       }
 
-      /* Batch loading: load in small chunks to avoid saturating the network/memory */
-      var BATCH = isMobile ? 6 : 20;
-      var loadIdx = 0;
-      function loadBatch() {
-        var end = Math.min(loadIdx + BATCH, COUNT);
-        for (var b = loadIdx; b < end; b++) loadFrame(b);
-        loadIdx = end;
-        if (loadIdx < COUNT) {
-          setTimeout(loadBatch, isMobile ? 100 : 16);
-        }
-      }
-      loadBatch();
-
-      /* ---- Start animation ---- */
       if (reduce) {
         seq.style.height = "100vh";
         var t = setInterval(function () { if (nearest(COUNT - 1)) { draw(COUNT - 1); clearInterval(t); } }, 120);
       } else {
-        /* Listen to scroll AND touchmove (Android throttles scroll events during touch) */
-        window.addEventListener("scroll", onScrollUpdate, { passive: true });
-        if (isAndroid) {
-          document.addEventListener("touchmove", onScrollUpdate, { passive: true });
-        }
+        window.addEventListener("scroll", onScroll, { passive: true });
         window.addEventListener("resize", function () {
-          lastDrawnFrame = -1; /* force redraw */
+          lastDrawnFrame = -1;
           draw(Math.round(currentProgress * (COUNT - 1)));
         });
-        onScrollUpdate();
+        onScroll();
         currentProgress = targetProgress;
-        rafId = requestAnimationFrame(updateAnimation);
+        requestAnimationFrame(updateAnimation);
       }
     })();
 
