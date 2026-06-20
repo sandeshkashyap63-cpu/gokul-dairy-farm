@@ -141,9 +141,7 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   background: radial-gradient(900px 620px at 80% 18%, rgba(216,179,91,.18), transparent 60%),
     linear-gradient(160deg, var(--green-deep) 0%, #182a18 52%, #2c2013 122%); }
 .hero__seq { height: 250vh; position: relative; }
-.hero__sticky { position: -webkit-sticky; position: sticky; top: 0; height: 100vh; min-height: 620px; display: flex; align-items: center; overflow: hidden;
-  -webkit-transform: translateZ(0); transform: translateZ(0); will-change: transform;
-  -webkit-backface-visibility: hidden; backface-visibility: hidden; }
+.hero__sticky { position: -webkit-sticky; position: sticky; top: 0; height: 100vh; min-height: 620px; display: flex; align-items: center; overflow: hidden; }
 .hero__sticky::before { content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image: radial-gradient(rgba(255,255,255,.045) 1.5px, transparent 1.5px); background-size: 30px 30px; opacity: .5; }
 .hero__inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1.05fr .95fr; gap: 54px; align-items: center; width: 100%; }
@@ -403,14 +401,10 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   .hamburger { display: flex; }
   /* mobile hero: full-bleed animation behind centered text */
   .hero__seq { height: 210vh; }
-  .hero__sticky { min-height: 100vh; min-height: 100dvh;
-    -webkit-transform: translateZ(0); transform: translateZ(0); will-change: transform; }
+  .hero__sticky { height: 100vh; height: 100svh; min-height: 0; }
   .hero__inner { display: flex; flex-direction: column; justify-content: center; height: 100%; }
   .hero__stage { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%;
-    border-radius: 0; aspect-ratio: auto; box-shadow: none; z-index: 0;
-    -webkit-transform: translateZ(0); transform: translateZ(0); }
-  .hero__canvas,
-  .hero__canvas--img { -webkit-transform: translateZ(0); transform: translateZ(0); }
+    border-radius: 0; aspect-ratio: auto; box-shadow: none; z-index: 0; }
   .hero__canvas--img { width: 100% !important; height: 100% !important; object-fit: cover; display: block;
     position: absolute; top: 0; left: 0; z-index: 0; }
   .hero__stage::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
