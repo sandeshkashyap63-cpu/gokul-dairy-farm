@@ -79,7 +79,7 @@
       var heroContent = seq.querySelector(".hero__content");
       var COUNT = 215;
       var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var imgs = new Array(COUNT), loaded = 0, currentProgress = 0, targetProgress = 0, lerpFactor = 0.08, dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var imgs = new Array(COUNT), loaded = 0, currentProgress = 0, targetProgress = 0, lerpFactor = 0.08, dpr = Math.min(window.devicePixelRatio || 1, 2), lastDrawnFrame = -1;
       
       function pad(n) { return ("00" + n).slice(-3); }
       
@@ -104,13 +104,15 @@
       }
       
       function draw(i) {
+        var sizeChanged = sizeCanvas();
+        if (i === lastDrawnFrame && !sizeChanged) return;
         var im = nearest(i); if (!im) return;
-        sizeCanvas();
         var cw = canvas.width, ch = canvas.height, iw = im.naturalWidth, ih = im.naturalHeight;
         if (cw <= 1 || ch <= 1) return;
         var s = Math.max(cw / iw, ch / ih), dw = iw * s, dh = ih * s;
         ctx.clearRect(0, 0, cw, ch);
         ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+        lastDrawnFrame = i;
       }
       
       function getScrollProgress() {
