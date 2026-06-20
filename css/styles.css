@@ -435,3 +435,68 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   .form__row { grid-template-columns: 1fr; }
   .brand__sub { display: none; }
 }
+
+/* ===== Cows Slider Gallery (Community Section) ===== */
+.community__slider-container {
+  position: relative;
+  width: min(460px, 100%);
+  aspect-ratio: 1;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255,255,255,0.08);
+  background: var(--brown-2);
+}
+
+.community__slider {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.community__slide {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.8s ease-in-out, visibility 0.8s ease-in-out;
+}
+
+.community__slide.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.community__slide img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.slider-dots {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  z-index: 10;
+}
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: background 0.3s, transform 0.3s;
+}
+
+.dot:hover {
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.dot.active {
+  background: var(--gold-2);
+  transform: scale(1.2);
+}

@@ -69,22 +69,25 @@
       reveals.forEach(function (el) { el.classList.add("in"); });
     }
 
-    /* ---- Hero: scroll-scrubbed milk animation ---- */
+    /* ---- Hero: scroll-scrubbed milk animation with smooth lerping ---- */
     (function () {
       var canvas = document.getElementById("heroCanvas");
       var seq = document.getElementById("heroSeq");
       var hero = document.getElementById("home");
       if (!canvas || !seq) return;
       var ctx = canvas.getContext("2d");
-      var COUNT = 108;
+      var COUNT = 215;
       var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var imgs = new Array(COUNT), loaded = 0, cur = -1, dpr = Math.min(window.devicePixelRatio || 1, 2);
+      var imgs = new Array(COUNT), loaded = 0, currentProgress = 0, targetProgress = 0, lerpFactor = 0.08, dpr = Math.min(window.devicePixelRatio || 1, 2);
+      
       function pad(n) { return ("00" + n).slice(-3); }
+      
       function sizeCanvas() {
         var r = canvas.getBoundingClientRect();
         canvas.width = Math.max(1, Math.round(r.width * dpr));
         canvas.height = Math.max(1, Math.round(r.height * dpr));
       }
+      
       function nearest(i) {
         if (imgs[i] && imgs[i].complete && imgs[i].naturalWidth) return imgs[i];
         var j = i;
@@ -92,6 +95,7 @@
         if (j < 0) { j = i; while (j < COUNT && !(imgs[j] && imgs[j].complete && imgs[j].naturalWidth)) j++; }
         return (j >= 0 && j < COUNT) ? imgs[j] : null;
       }
+      
       function draw(i) {
         var im = nearest(i); if (!im) return;
         var cw = canvas.width, ch = canvas.height, iw = im.naturalWidth, ih = im.naturalHeight;
@@ -99,42 +103,62 @@
         ctx.clearRect(0, 0, cw, ch);
         ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
       }
-      function frameForScroll() {
-        var total = seq.offsetHeight - window.innerHeight;
-        var p = total > 0 ? (-seq.getBoundingClientRect().top) / total : 0;
-        p = p < 0 ? 0 : p > 1 ? 1 : p;
-        return Math.round(p * (COUNT - 1));
+      
+      function getScrollProgress() {
+        var rect = seq.getBoundingClientRect();
+        var total = rect.height - window.innerHeight;
+        var p = total > 0 ? (-rect.top) / total : 0;
+        return p < 0 ? 0 : p > 1 ? 1 : p;
       }
-      var ticking = false;
+      
+      // Animation Loop for smooth easing
+      function updateAnimation() {
+        if (!reduce) {
+          currentProgress += (targetProgress - currentProgress) * lerpFactor;
+          if (Math.abs(targetProgress - currentProgress) < 0.0001) {
+            currentProgress = targetProgress;
+          }
+          var f = Math.round(currentProgress * (COUNT - 1));
+          draw(f);
+        }
+        requestAnimationFrame(updateAnimation);
+      }
+      
       function onScroll() {
-        if (reduce || ticking) return; ticking = true;
-        requestAnimationFrame(function () {
-          var f = frameForScroll();
-          if (f !== cur) { cur = f; draw(cur); }
-          if (hero && window.pageYOffset > 40) hero.classList.add("scrolled-in");
-          ticking = false;
-        });
+        targetProgress = getScrollProgress();
+        if (hero && (window.pageYOffset || window.scrollY) > 40) {
+          hero.classList.add("scrolled-in");
+        }
       }
+      
+      // Load Images
       for (var i = 0; i < COUNT; i++) {
         (function (i) {
           var im = new Image();
           im.onload = function () {
             loaded++;
-            if (i === (reduce ? COUNT - 1 : (cur < 0 ? 0 : cur))) draw(i);
-            if (loaded === COUNT && !reduce) draw(frameForScroll());
+            if (i === (reduce ? COUNT - 1 : 0)) draw(i);
+            if (loaded === COUNT && !reduce) {
+              targetProgress = getScrollProgress();
+              currentProgress = targetProgress;
+              draw(Math.round(currentProgress * (COUNT - 1)));
+            }
           };
-          im.src = "images/hero-frames/f-" + pad(i) + ".jpg";
+          im.src = "ezgif-3429664a03a5a981-jpg/ezgif-frame-" + pad(i + 1) + ".jpg";
           imgs[i] = im;
         })(i);
       }
+      
       if (reduce) {
-        seq.style.height = "100vh"; sizeCanvas(); cur = COUNT - 1;
+        seq.style.height = "100vh"; sizeCanvas();
         var t = setInterval(function () { if (nearest(COUNT - 1)) { sizeCanvas(); draw(COUNT - 1); clearInterval(t); } }, 120);
       } else {
-        sizeCanvas(); cur = 0; draw(0);
+        sizeCanvas();
         window.addEventListener("scroll", onScroll, { passive: true });
-        window.addEventListener("resize", function () { sizeCanvas(); cur = frameForScroll(); draw(cur); });
+        window.addEventListener("resize", function () { sizeCanvas(); draw(Math.round(currentProgress * (COUNT - 1))); });
         onScroll();
+        currentProgress = targetProgress;
+        requestAnimationFrame(updateAnimation);
       }
     })();
 
@@ -254,5 +278,50 @@
           });
       });
     }
+
+    /* ---- Cows Slider Gallery ---- */
+    (function () {
+      var container = document.querySelector('.community__slider-container');
+      if (!container) return;
+      var slides = container.querySelectorAll('.community__slide');
+      var dots = container.querySelectorAll('.dot');
+      var currentIndex = 0;
+      var slideInterval = null;
+      var duration = 3000;
+
+      function showSlide(index) {
+        slides.forEach(function (slide, i) {
+          slide.classList.toggle('active', i === index);
+        });
+        dots.forEach(function (dot, i) {
+          dot.classList.toggle('active', i === index);
+        });
+        currentIndex = index;
+      }
+
+      function nextSlide() {
+        var nextIndex = (currentIndex + 1) % slides.length;
+        showSlide(nextIndex);
+      }
+
+      function startAutoplay() {
+        stopAutoplay();
+        slideInterval = setInterval(nextSlide, duration);
+      }
+
+      function stopAutoplay() {
+        if (slideInterval) clearInterval(slideInterval);
+      }
+
+      dots.forEach(function (dot) {
+        dot.addEventListener('click', function () {
+          var index = parseInt(dot.getAttribute('data-index'), 10);
+          showSlide(index);
+          startAutoplay();
+        });
+      });
+
+      startAutoplay();
+    })();
   });
 })();
