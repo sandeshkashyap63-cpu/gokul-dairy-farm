@@ -141,7 +141,9 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   background: radial-gradient(900px 620px at 80% 18%, rgba(216,179,91,.18), transparent 60%),
     linear-gradient(160deg, var(--green-deep) 0%, #182a18 52%, #2c2013 122%); }
 .hero__seq { height: 250vh; position: relative; }
-.hero__sticky { position: sticky; top: 0; height: 100vh; min-height: 620px; display: flex; align-items: center; overflow: hidden; }
+.hero__sticky { position: -webkit-sticky; position: sticky; top: 0; height: 100vh; min-height: 620px; display: flex; align-items: center; overflow: hidden;
+  -webkit-transform: translateZ(0); transform: translateZ(0); will-change: transform;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden; }
 .hero__sticky::before { content: ""; position: absolute; inset: 0; pointer-events: none;
   background-image: radial-gradient(rgba(255,255,255,.045) 1.5px, transparent 1.5px); background-size: 30px 30px; opacity: .5; }
 .hero__inner { position: relative; z-index: 2; display: grid; grid-template-columns: 1.05fr .95fr; gap: 54px; align-items: center; width: 100%; }
@@ -161,7 +163,8 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
 .hero__stage { position: relative; justify-self: center; width: min(420px, 92%); aspect-ratio: 560 / 996;
   border-radius: 30px; overflow: hidden; background: #0d160d;
   box-shadow: var(--shadow-lg), 0 0 0 1px rgba(216,179,91,.45), 0 0 70px rgba(216,179,91,.2); }
-.hero__canvas { width: 100%; height: 100%; display: block; }
+.hero__canvas { width: 100%; height: 100%; display: block; image-rendering: auto;
+  -webkit-transform: translateZ(0); transform: translateZ(0); }
 .hero__scrollcue { position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%); display: inline-flex; flex-direction: column;
   align-items: center; gap: 2px; color: #fff; font-size: .64rem; letter-spacing: .2em; text-transform: uppercase; opacity: .9; pointer-events: none;
   text-shadow: 0 1px 6px rgba(0,0,0,.6); transition: opacity .4s; }
@@ -398,17 +401,23 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   .nav__link { padding: 14px 12px; border-radius: 8px; border-bottom: 1px solid var(--line); }
   .nav__cta { margin: 16px 0 0; }
   .hamburger { display: flex; }
-  /* mobile hero: full-bleed milk animation behind centered text */
+  /* mobile hero: full-bleed milk animation behind centered text (Android-safe) */
   .hero__seq { height: 210vh; }
-  .hero__sticky { min-height: 0; }
-  .hero__inner { display: block; }
-  .hero__stage { position: absolute; inset: 0; width: 100%; height: 100%; border-radius: 0; aspect-ratio: auto; box-shadow: none; z-index: 0; }
-  .hero__stage::after { content: ""; position: absolute; inset: 0; z-index: 1;
+  .hero__sticky { min-height: 100vh; min-height: 100dvh;
+    -webkit-transform: translateZ(0); transform: translateZ(0); will-change: transform; }
+  .hero__inner { display: flex; flex-direction: column; justify-content: center; height: 100%; }
+  .hero__stage { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%;
+    border-radius: 0; aspect-ratio: auto; box-shadow: none; z-index: 0;
+    -webkit-transform: translateZ(0); transform: translateZ(0); }
+  .hero__canvas { -webkit-transform: translateZ(0); transform: translateZ(0); }
+  .hero__stage::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
     background: linear-gradient(0deg, rgba(8,16,8,.92), rgba(8,16,8,.4) 48%, rgba(8,16,8,.66)); }
   .hero__scrollcue { z-index: 2; bottom: 20px; }
   .hero__content.reveal { position: relative; z-index: 3; max-width: 600px; text-align: center; margin-inline: auto;
-    opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; pointer-events: none; }
-  .hero__content.reveal.show-mobile-text { opacity: 1; transform: translateY(0); pointer-events: auto; }
+    opacity: 0; -webkit-transform: translateY(20px); transform: translateY(20px);
+    -webkit-transition: opacity 0.6s ease, -webkit-transform 0.6s ease; transition: opacity 0.6s ease, transform 0.6s ease;
+    pointer-events: none; }
+  .hero__content.reveal.show-mobile-text { opacity: 1; -webkit-transform: translateY(0); transform: translateY(0); pointer-events: auto; }
   @media (prefers-reduced-motion: reduce) {
     .hero__content.reveal { opacity: 1; transform: none; pointer-events: auto; }
   }

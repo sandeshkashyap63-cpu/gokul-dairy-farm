@@ -4,6 +4,11 @@
 (function () {
   "use strict";
 
+  // Polyfill for NodeList.prototype.forEach (for older Android / WebView compatibility)
+  if (window.NodeList && !NodeList.prototype.forEach) {
+    NodeList.prototype.forEach = Array.prototype.forEach;
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
 
     /* ---- Current year in footer ---- */
@@ -69,64 +74,135 @@
       reveals.forEach(function (el) { el.classList.add("in"); });
     }
 
-    /* ---- Hero: scroll-scrubbed milk animation with smooth lerping ---- */
+    /* ---- Hero: scroll-scrubbed milk animation (Android-safe) ---- */
     (function () {
       var canvas = document.getElementById("heroCanvas");
       var seq = document.getElementById("heroSeq");
       var hero = document.getElementById("home");
       if (!canvas || !seq) return;
-      var ctx = canvas.getContext("2d");
+
       var heroContent = seq.querySelector(".hero__content");
-      var COUNT = 215;
+      var TOTAL_FRAMES = 215;
       var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      var imgs = new Array(COUNT), loaded = 0, currentProgress = 0, targetProgress = 0, lerpFactor = 0.08, dpr = Math.min(window.devicePixelRatio || 1, 2), lastDrawnFrame = -1;
-      
+
+      /* ---- Device detection ---- */
+      var ua = navigator.userAgent || "";
+      var isMobile = /Android|iPhone|iPad|iPod|Mobile/i.test(ua);
+      var isAndroid = /Android/i.test(ua);
+
+      /* On mobile: load every 5th frame to save memory (~43 frames ≈ 160MB vs 800MB).
+         On desktop: load all 215 frames for full smoothness. */
+      var STEP = isMobile ? 5 : 1;
+      var frameIndices = []; // 0-based indices into TOTAL_FRAMES
+      for (var fi = 0; fi < TOTAL_FRAMES; fi += STEP) frameIndices.push(fi);
+      /* Always include the last frame */
+      if (frameIndices[frameIndices.length - 1] !== TOTAL_FRAMES - 1) frameIndices.push(TOTAL_FRAMES - 1);
+      var COUNT = frameIndices.length;
+
+      /* ---- Canvas context (with Android-safe hints) ---- */
+      var ctx = null;
+      try {
+        ctx = canvas.getContext("2d", { willReadFrequently: false, desynchronized: true });
+      } catch (e) { /* ignore */ }
+      if (!ctx) {
+        try { ctx = canvas.getContext("2d"); } catch (e2) { /* ignore */ }
+      }
+
+      /* ---- IMG fallback for devices where canvas fails entirely ---- */
+      var fallbackImg = null;
+      if (!ctx) {
+        fallbackImg = document.createElement("img");
+        fallbackImg.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;";
+        fallbackImg.alt = canvas.getAttribute("aria-label") || "";
+        canvas.parentNode.insertBefore(fallbackImg, canvas);
+        canvas.style.display = "none";
+      }
+
+      /* ---- DPR: cap at 1 on mobile to prevent huge canvas buffers ---- */
+      var dpr = isMobile ? 1 : Math.min(window.devicePixelRatio || 1, 2);
+
+      var imgs = new Array(COUNT);
+      var loaded = 0;
+      var currentProgress = 0;
+      var targetProgress = 0;
+      var lerpFactor = isMobile ? 0.15 : 0.08; // snappier on mobile
+      var lastDrawnFrame = -1;
+      var canvasSized = false;
+
       function pad(n) { return ("00" + n).slice(-3); }
-      
+
       function sizeCanvas() {
+        if (!ctx) return false;
         var r = canvas.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) return false;
         var w = Math.max(1, Math.round(r.width * dpr));
         var h = Math.max(1, Math.round(r.height * dpr));
         if (canvas.width !== w || canvas.height !== h) {
           canvas.width = w;
           canvas.height = h;
+          canvasSized = true;
           return true;
         }
         return false;
       }
-      
+
       function nearest(i) {
         if (imgs[i] && imgs[i].complete && imgs[i].naturalWidth) return imgs[i];
-        var j = i;
-        while (j >= 0 && !(imgs[j] && imgs[j].complete && imgs[j].naturalWidth)) j--;
-        if (j < 0) { j = i; while (j < COUNT && !(imgs[j] && imgs[j].complete && imgs[j].naturalWidth)) j++; }
-        return (j >= 0 && j < COUNT) ? imgs[j] : null;
+        /* search outward from i */
+        var lo = i - 1, hi = i + 1;
+        while (lo >= 0 || hi < COUNT) {
+          if (lo >= 0 && imgs[lo] && imgs[lo].complete && imgs[lo].naturalWidth) return imgs[lo];
+          if (hi < COUNT && imgs[hi] && imgs[hi].complete && imgs[hi].naturalWidth) return imgs[hi];
+          lo--; hi++;
+        }
+        return null;
       }
-      
+
       function draw(i) {
+        if (fallbackImg) {
+          /* IMG fallback mode */
+          var im = nearest(i);
+          if (im && fallbackImg.src !== im.src) fallbackImg.src = im.src;
+          lastDrawnFrame = i;
+          return;
+        }
+        if (!ctx) return;
         var sizeChanged = sizeCanvas();
         if (i === lastDrawnFrame && !sizeChanged) return;
-        var im = nearest(i); if (!im) return;
+        var im = nearest(i);
+        if (!im) return;
         var cw = canvas.width, ch = canvas.height, iw = im.naturalWidth, ih = im.naturalHeight;
-        if (cw <= 1 || ch <= 1) return;
+        if (cw <= 1 || ch <= 1 || iw <= 0 || ih <= 0) return;
         var s = Math.max(cw / iw, ch / ih), dw = iw * s, dh = ih * s;
-        ctx.clearRect(0, 0, cw, ch);
-        ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+        try {
+          ctx.clearRect(0, 0, cw, ch);
+          ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+        } catch (e) {
+          /* Canvas context lost — switch to IMG fallback */
+          fallbackImg = document.createElement("img");
+          fallbackImg.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;position:absolute;inset:0;";
+          fallbackImg.src = im.src;
+          canvas.parentNode.insertBefore(fallbackImg, canvas);
+          canvas.style.display = "none";
+          ctx = null;
+        }
         lastDrawnFrame = i;
       }
-      
+
       function getScrollProgress() {
         var rect = seq.getBoundingClientRect();
         var total = rect.height - window.innerHeight;
-        var p = total > 0 ? (-rect.top) / total : 0;
+        if (total <= 0) return 0;
+        var p = (-rect.top) / total;
         return p < 0 ? 0 : p > 1 ? 1 : p;
       }
-      
-      // Animation Loop for smooth easing
+
+      /* ---- Animation loop ---- */
+      var rafId = 0;
       function updateAnimation() {
         if (!reduce) {
           currentProgress += (targetProgress - currentProgress) * lerpFactor;
-          if (Math.abs(targetProgress - currentProgress) < 0.0001) {
+          if (Math.abs(targetProgress - currentProgress) < 0.0005) {
             currentProgress = targetProgress;
           }
           var f = Math.round(currentProgress * (COUNT - 1));
@@ -135,43 +211,71 @@
             heroContent.classList.toggle("show-mobile-text", currentProgress >= 0.8);
           }
         }
-        requestAnimationFrame(updateAnimation);
+        rafId = requestAnimationFrame(updateAnimation);
       }
-      
-      function onScroll() {
+
+      function onScrollUpdate() {
         targetProgress = getScrollProgress();
         if (hero && (window.pageYOffset || window.scrollY) > 40) {
           hero.classList.add("scrolled-in");
         }
       }
-      
-      // Load Images
-      for (var i = 0; i < COUNT; i++) {
-        (function (i) {
-          var im = new Image();
-          im.onload = function () {
-            loaded++;
-            if (i === (reduce ? COUNT - 1 : 0)) draw(i);
-            if (loaded === COUNT && !reduce) {
-              targetProgress = getScrollProgress();
-              currentProgress = targetProgress;
-              draw(Math.round(currentProgress * (COUNT - 1)));
-            }
-          };
-          im.src = "images/hero-frames/ezgif-frame-" + pad(i + 1) + ".jpg";
-          imgs[i] = im;
-        })(i);
+
+      /* ---- Load frames ---- */
+      function loadFrame(idx) {
+        var im = new Image();
+        im.decoding = "async";
+        im.onload = function () {
+          loaded++;
+          /* Draw first available frame immediately */
+          if (loaded === 1 && lastDrawnFrame < 0) {
+            sizeCanvas();
+            draw(idx);
+          }
+          if (loaded === COUNT && !reduce) {
+            targetProgress = getScrollProgress();
+            currentProgress = targetProgress;
+            draw(Math.round(currentProgress * (COUNT - 1)));
+          }
+        };
+        im.onerror = function () {
+          loaded++; /* count errors so we don't block */
+        };
+        /* frameIndices[idx] maps to 0-based frame number → +1 for filename */
+        im.src = "images/hero-frames/ezgif-frame-" + pad(frameIndices[idx] + 1) + ".jpg";
+        imgs[idx] = im;
       }
-      
+
+      /* Batch loading: load in small chunks to avoid saturating the network/memory */
+      var BATCH = isMobile ? 6 : 20;
+      var loadIdx = 0;
+      function loadBatch() {
+        var end = Math.min(loadIdx + BATCH, COUNT);
+        for (var b = loadIdx; b < end; b++) loadFrame(b);
+        loadIdx = end;
+        if (loadIdx < COUNT) {
+          setTimeout(loadBatch, isMobile ? 100 : 16);
+        }
+      }
+      loadBatch();
+
+      /* ---- Start animation ---- */
       if (reduce) {
         seq.style.height = "100vh";
         var t = setInterval(function () { if (nearest(COUNT - 1)) { draw(COUNT - 1); clearInterval(t); } }, 120);
       } else {
-        window.addEventListener("scroll", onScroll, { passive: true });
-        window.addEventListener("resize", function () { draw(Math.round(currentProgress * (COUNT - 1))); });
-        onScroll();
+        /* Listen to scroll AND touchmove (Android throttles scroll events during touch) */
+        window.addEventListener("scroll", onScrollUpdate, { passive: true });
+        if (isAndroid) {
+          document.addEventListener("touchmove", onScrollUpdate, { passive: true });
+        }
+        window.addEventListener("resize", function () {
+          lastDrawnFrame = -1; /* force redraw */
+          draw(Math.round(currentProgress * (COUNT - 1)));
+        });
+        onScrollUpdate();
         currentProgress = targetProgress;
-        requestAnimationFrame(updateAnimation);
+        rafId = requestAnimationFrame(updateAnimation);
       }
     })();
 
