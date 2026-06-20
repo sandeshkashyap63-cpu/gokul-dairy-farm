@@ -76,6 +76,7 @@
       var hero = document.getElementById("home");
       if (!canvas || !seq) return;
       var ctx = canvas.getContext("2d");
+      var heroContent = seq.querySelector(".hero__content");
       var COUNT = 215;
       var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       var imgs = new Array(COUNT), loaded = 0, currentProgress = 0, targetProgress = 0, lerpFactor = 0.08, dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -120,6 +121,9 @@
           }
           var f = Math.round(currentProgress * (COUNT - 1));
           draw(f);
+          if (heroContent) {
+            heroContent.classList.toggle("show-mobile-text", currentProgress >= 0.8);
+          }
         }
         requestAnimationFrame(updateAnimation);
       }

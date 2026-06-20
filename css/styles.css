@@ -405,7 +405,12 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   .hero__stage::after { content: ""; position: absolute; inset: 0; z-index: 1;
     background: linear-gradient(0deg, rgba(8,16,8,.92), rgba(8,16,8,.4) 48%, rgba(8,16,8,.66)); }
   .hero__scrollcue { z-index: 2; bottom: 20px; }
-  .hero__content { position: relative; z-index: 3; max-width: 600px; text-align: center; margin-inline: auto; }
+  .hero__content.reveal { position: relative; z-index: 3; max-width: 600px; text-align: center; margin-inline: auto;
+    opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; pointer-events: none; }
+  .hero__content.reveal.show-mobile-text { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  @media (prefers-reduced-motion: reduce) {
+    .hero__content.reveal { opacity: 1; transform: none; pointer-events: auto; }
+  }
   .hero__actions, .hero__badges { justify-content: center; }
   .about__inner, .story__inner, .community__inner, .contact__inner { grid-template-columns: 1fr; gap: 44px; }
   .story__media, .community__mascot, .about__media { max-width: 520px; }
