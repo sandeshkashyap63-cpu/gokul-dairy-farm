@@ -85,8 +85,14 @@
       
       function sizeCanvas() {
         var r = canvas.getBoundingClientRect();
-        canvas.width = Math.max(1, Math.round(r.width * dpr));
-        canvas.height = Math.max(1, Math.round(r.height * dpr));
+        var w = Math.max(1, Math.round(r.width * dpr));
+        var h = Math.max(1, Math.round(r.height * dpr));
+        if (canvas.width !== w || canvas.height !== h) {
+          canvas.width = w;
+          canvas.height = h;
+          return true;
+        }
+        return false;
       }
       
       function nearest(i) {
@@ -99,7 +105,9 @@
       
       function draw(i) {
         var im = nearest(i); if (!im) return;
+        sizeCanvas();
         var cw = canvas.width, ch = canvas.height, iw = im.naturalWidth, ih = im.naturalHeight;
+        if (cw <= 1 || ch <= 1) return;
         var s = Math.max(cw / iw, ch / ih), dw = iw * s, dh = ih * s;
         ctx.clearRect(0, 0, cw, ch);
         ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
@@ -154,12 +162,11 @@
       }
       
       if (reduce) {
-        seq.style.height = "100vh"; sizeCanvas();
-        var t = setInterval(function () { if (nearest(COUNT - 1)) { sizeCanvas(); draw(COUNT - 1); clearInterval(t); } }, 120);
+        seq.style.height = "100vh";
+        var t = setInterval(function () { if (nearest(COUNT - 1)) { draw(COUNT - 1); clearInterval(t); } }, 120);
       } else {
-        sizeCanvas();
         window.addEventListener("scroll", onScroll, { passive: true });
-        window.addEventListener("resize", function () { sizeCanvas(); draw(Math.round(currentProgress * (COUNT - 1))); });
+        window.addEventListener("resize", function () { draw(Math.round(currentProgress * (COUNT - 1))); });
         onScroll();
         currentProgress = targetProgress;
         requestAnimationFrame(updateAnimation);
