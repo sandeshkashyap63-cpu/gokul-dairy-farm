@@ -3,3 +3,5 @@ Thumbs.db
 *.log
 # original high-res source images (kept locally, optimized JPGs are committed)
 images/originals/
+# raw extracted GIF frames (the optimized set lives in images/hero-frames/)
+ezgif-3429664a03a5a981-jpg/

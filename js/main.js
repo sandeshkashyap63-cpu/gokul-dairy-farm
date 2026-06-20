@@ -69,36 +69,73 @@
       reveals.forEach(function (el) { el.classList.add("in"); });
     }
 
-    /* ---- Hero background slideshow ---- */
+    /* ---- Hero: scroll-scrubbed milk animation ---- */
     (function () {
-      var bg = document.getElementById("heroBg");
-      var dotsWrap = document.getElementById("slideDots");
-      if (!bg) return;
-      var slides = bg.querySelectorAll(".hero__slide");
-      var count = slides.length, idx = 0, timer = null, dots = [];
-      if (!count) return;
-      if (dotsWrap) {
-        for (var d = 0; d < count; d++) {
-          (function (n) {
-            var b = document.createElement("button");
-            b.setAttribute("aria-label", "Show image " + (n + 1));
-            b.addEventListener("click", function () { go(n); restart(); });
-            dotsWrap.appendChild(b); dots.push(b);
-          })(d);
-        }
+      var canvas = document.getElementById("heroCanvas");
+      var seq = document.getElementById("heroSeq");
+      var hero = document.getElementById("home");
+      if (!canvas || !seq) return;
+      var ctx = canvas.getContext("2d");
+      var COUNT = 108;
+      var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      var imgs = new Array(COUNT), loaded = 0, cur = -1, dpr = Math.min(window.devicePixelRatio || 1, 2);
+      function pad(n) { return ("00" + n).slice(-3); }
+      function sizeCanvas() {
+        var r = canvas.getBoundingClientRect();
+        canvas.width = Math.max(1, Math.round(r.width * dpr));
+        canvas.height = Math.max(1, Math.round(r.height * dpr));
       }
-      function go(n) {
-        idx = (n + count) % count;
-        slides.forEach(function (s, k) { s.classList.toggle("is-active", k === idx); });
-        dots.forEach(function (dd, k) { dd.classList.toggle("active", k === idx); });
+      function nearest(i) {
+        if (imgs[i] && imgs[i].complete && imgs[i].naturalWidth) return imgs[i];
+        var j = i;
+        while (j >= 0 && !(imgs[j] && imgs[j].complete && imgs[j].naturalWidth)) j--;
+        if (j < 0) { j = i; while (j < COUNT && !(imgs[j] && imgs[j].complete && imgs[j].naturalWidth)) j++; }
+        return (j >= 0 && j < COUNT) ? imgs[j] : null;
       }
-      function next() { go(idx + 1); }
-      function prev() { go(idx - 1); }
-      function restart() { clearInterval(timer); timer = setInterval(next, 5000); }
-      var nb = document.getElementById("slideNext"), pb = document.getElementById("slidePrev");
-      if (nb) nb.addEventListener("click", function () { next(); restart(); });
-      if (pb) pb.addEventListener("click", function () { prev(); restart(); });
-      go(0); restart();
+      function draw(i) {
+        var im = nearest(i); if (!im) return;
+        var cw = canvas.width, ch = canvas.height, iw = im.naturalWidth, ih = im.naturalHeight;
+        var s = Math.max(cw / iw, ch / ih), dw = iw * s, dh = ih * s;
+        ctx.clearRect(0, 0, cw, ch);
+        ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
+      }
+      function frameForScroll() {
+        var total = seq.offsetHeight - window.innerHeight;
+        var p = total > 0 ? (-seq.getBoundingClientRect().top) / total : 0;
+        p = p < 0 ? 0 : p > 1 ? 1 : p;
+        return Math.round(p * (COUNT - 1));
+      }
+      var ticking = false;
+      function onScroll() {
+        if (reduce || ticking) return; ticking = true;
+        requestAnimationFrame(function () {
+          var f = frameForScroll();
+          if (f !== cur) { cur = f; draw(cur); }
+          if (hero && window.pageYOffset > 40) hero.classList.add("scrolled-in");
+          ticking = false;
+        });
+      }
+      for (var i = 0; i < COUNT; i++) {
+        (function (i) {
+          var im = new Image();
+          im.onload = function () {
+            loaded++;
+            if (i === (reduce ? COUNT - 1 : (cur < 0 ? 0 : cur))) draw(i);
+            if (loaded === COUNT && !reduce) draw(frameForScroll());
+          };
+          im.src = "images/hero-frames/f-" + pad(i) + ".jpg";
+          imgs[i] = im;
+        })(i);
+      }
+      if (reduce) {
+        seq.style.height = "100vh"; sizeCanvas(); cur = COUNT - 1;
+        var t = setInterval(function () { if (nearest(COUNT - 1)) { sizeCanvas(); draw(COUNT - 1); clearInterval(t); } }, 120);
+      } else {
+        sizeCanvas(); cur = 0; draw(0);
+        window.addEventListener("scroll", onScroll, { passive: true });
+        window.addEventListener("resize", function () { sizeCanvas(); cur = frameForScroll(); draw(cur); });
+        onScroll();
+      }
     })();
 
     /* ---- Scroll progress bar ---- */
@@ -115,21 +152,6 @@
       window.addEventListener("resize", upd); upd();
     })();
 
-    /* ---- Hero parallax ---- */
-    (function () {
-      var bg = document.getElementById("heroBg");
-      var hero = document.getElementById("home");
-      if (!bg || !hero || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-      var ticking = false;
-      window.addEventListener("scroll", function () {
-        if (ticking) return; ticking = true;
-        requestAnimationFrame(function () {
-          var y = window.pageYOffset || 0;
-          if (y < hero.offsetHeight) bg.style.transform = "translateY(" + (y * 0.25) + "px)";
-          ticking = false;
-        });
-      }, { passive: true });
-    })();
 
     /* ---- Animated count-up stats ---- */
     (function () {
