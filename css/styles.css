@@ -400,9 +400,9 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   .nav__cta { margin: 16px 0 0; }
   .hamburger { display: flex; }
   /* mobile hero: 9:16 centered animation card behind text */
-  .hero__seq { height: 100vh; height: 100svh; }
-  .hero__sticky { height: 100vh; height: 100svh; min-height: 0; position: relative; }
-  .hero__inner { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 0 16px; position: relative; z-index: 2; }
+  .hero__seq { height: auto; }
+  .hero__sticky { height: 100vh; height: 100svh; min-height: 0; position: relative; display: block; overflow: hidden; }
+  .hero__inner { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 16px; z-index: 2; }
   .hero__stage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
     width: 100%; max-width: 480px; aspect-ratio: 1080/1920; height: auto;
     border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.5); z-index: 0; overflow: hidden; }
