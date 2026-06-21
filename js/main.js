@@ -84,6 +84,15 @@
       if (!canvas || !seq) return;
 
       var heroContent = seq.querySelector(".hero__content");
+      var stickyEl = seq.querySelector(".hero__sticky");
+      /* Robust viewport reference: the pinned sticky's real height.
+         Avoids window.innerHeight, which on Android Chrome (URL bar /
+         visual viewport) can exceed the seq height and make the scrub
+         range negative — freezing the animation on frame 0. */
+      function pinHeight() {
+        var h = stickyEl ? stickyEl.getBoundingClientRect().height : 0;
+        return h || document.documentElement.clientHeight || window.innerHeight;
+      }
       var TOTAL_FRAMES = 215;
       var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -163,7 +172,7 @@
         /* Scroll handler */
         function mGetProgress() {
           var rect = seq.getBoundingClientRect();
-          var total = rect.height - window.innerHeight;
+          var total = rect.height - pinHeight();
           if (total <= 0) return 0;
           var p = (-rect.top) / total;
           return p < 0 ? 0 : p > 1 ? 1 : p;
@@ -253,7 +262,7 @@
 
       function getScrollProgress() {
         var rect = seq.getBoundingClientRect();
-        var total = rect.height - window.innerHeight;
+        var total = rect.height - pinHeight();
         if (total <= 0) return 0;
         var p = (-rect.top) / total;
         return p < 0 ? 0 : p > 1 ? 1 : p;
