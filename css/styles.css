@@ -399,19 +399,20 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   .nav__link { padding: 14px 12px; border-radius: 8px; border-bottom: 1px solid var(--line); }
   .nav__cta { margin: 16px 0 0; }
   .hamburger { display: flex; }
-  /* mobile hero: 9:16 centered animation card behind text (iOS / Default) */
+  /* mobile hero: grid overlay card, perfectly aligned to top for all devices */
   .hero__seq { height: auto; }
-  .hero__sticky { height: 100vh; height: 100svh; min-height: 0; position: relative; display: block; overflow: hidden; }
-  .hero__inner { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 0 16px; z-index: 2; }
-  .hero__stage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  .hero__sticky { height: auto !important; min-height: 0 !important; position: relative; display: block; overflow: hidden; padding: 24px 0 40px; }
+  .hero__inner { position: relative; display: grid; grid-template-columns: 1fr; align-items: start; justify-items: center; padding: 0 16px; z-index: 2; height: auto; }
+  .hero__stage { grid-area: 1 / 1; position: relative; top: auto; left: auto; transform: none;
     width: 100%; max-width: 480px; aspect-ratio: 1080/1920; height: auto;
     border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.5); z-index: 0; overflow: hidden; }
   .hero__stage::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
     background: linear-gradient(0deg, rgba(8,16,8,.92), rgba(8,16,8,.4) 40%, rgba(8,16,8,.5)); }
   .hero__scrollcue { display: none; }
-  /* Text: HIDDEN initially, shown via JS .show-mobile-text class */
+  
+  /* Text: perfectly centered inside the grid cell */
   .hero__content.reveal,
-  .hero__content.reveal.in { position: relative; z-index: 3; width: 100%; max-width: 600px; text-align: center; margin-inline: auto;
+  .hero__content.reveal.in { grid-area: 1 / 1; position: relative; z-index: 3; width: 100%; max-width: 600px; text-align: center; margin-inline: auto; padding: 24px 10px; display: flex; flex-direction: column; justify-content: center;
     opacity: 0; -webkit-transform: translateY(20px); transform: translateY(20px);
     -webkit-transition: opacity 0.6s ease, -webkit-transform 0.6s ease; transition: opacity 0.6s ease, transform 0.6s ease;
     pointer-events: none; }
@@ -422,13 +423,9 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   }
   .hero__actions, .hero__badges { justify-content: center; }
 
-  /* ANDROID SPECIFIC FIXES (Grid overlay, no green gap, compressed text) */
+  /* ANDROID SPECIFIC FIXES (padding-hack fallback, compressed text) */
   @supports not (-webkit-touch-callout: none) {
-    .hero__seq { height: auto !important; }
-    .hero__sticky { height: auto !important; min-height: 0 !important; padding: 0 0 40px; }
-    .hero__inner { position: relative; display: grid; grid-template-columns: 1fr; align-items: start; justify-items: center; padding: 0 16px; height: auto; }
-    .hero__stage { grid-area: 1 / 1; top: auto; left: auto; transform: none; padding-bottom: 177.77%; height: 0; aspect-ratio: auto; }
-    .hero__content.reveal, .hero__content.reveal.in { grid-area: 1 / 1; padding: 20px 10px; }
+    .hero__stage { padding-bottom: 177.77%; height: 0; aspect-ratio: auto; }
     .hero__title { font-size: clamp(1.8rem, 8vw, 2.4rem); line-height: 1.05; }
     .hero__subtitle { font-size: .95rem; margin-top: 12px; line-height: 1.4; }
     .hero__pill { margin-bottom: 14px; font-size: .75rem; padding: 6px 12px; }
