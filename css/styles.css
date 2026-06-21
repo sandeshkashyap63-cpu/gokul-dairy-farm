@@ -411,17 +411,22 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
     background: linear-gradient(0deg, rgba(8,16,8,.92), rgba(8,16,8,.4) 40%, rgba(8,16,8,.5)); }
   .hero__scrollcue { display: none; }
   /* Text: HIDDEN initially, shown via JS .show-mobile-text class */
-  .hero__content.reveal,
-  .hero__content.reveal.in { grid-area: 1 / 1; position: relative; z-index: 3; width: 100%; max-width: 600px; text-align: center; margin-inline: auto; padding: 24px 10px 30px;
+  .hero__content.reveal.in { grid-area: 1 / 1; position: relative; z-index: 3; width: 100%; max-width: 600px; text-align: center; margin-inline: auto; padding: 20px 10px;
     opacity: 0; -webkit-transform: translateY(20px); transform: translateY(20px);
     -webkit-transition: opacity 0.6s ease, -webkit-transform 0.6s ease; transition: opacity 0.6s ease, transform 0.6s ease;
     pointer-events: none; }
+  .hero__title { font-size: clamp(1.8rem, 8vw, 2.4rem); line-height: 1.05; }
+  .hero__subtitle { font-size: .95rem; margin-top: 12px; line-height: 1.4; }
+  .hero__pill { margin-bottom: 14px; font-size: .75rem; padding: 6px 12px; }
+  .hero__actions { margin-top: 18px; flex-direction: column; width: 100%; max-width: 280px; margin-inline: auto; gap: 10px; }
+  .hero__actions .btn { width: 100%; padding: 12px 20px; font-size: .95rem; }
+  .hero__badges { margin-top: 18px; gap: 8px 12px; justify-content: center; }
+  .hero__badges li { font-size: .85rem; }
   .hero__content.reveal.show-mobile-text,
   .hero__content.reveal.in.show-mobile-text { opacity: 1 !important; -webkit-transform: translateY(0) !important; transform: translateY(0) !important; pointer-events: auto !important; }
   @media (prefers-reduced-motion: reduce) {
-    .hero__content.reveal { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
+    .hero__content.reveal, .hero__content.reveal.in { opacity: 1 !important; transform: none !important; pointer-events: auto !important; }
   }
-  .hero__actions, .hero__badges { justify-content: center; }
   .about__inner, .story__inner, .community__inner, .contact__inner { grid-template-columns: 1fr; gap: 44px; }
   .story__media, .community__mascot, .about__media { max-width: 520px; }
   .about__milking { width: 160px; left: -6px; }
