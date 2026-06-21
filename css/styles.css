@@ -399,14 +399,15 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
   .nav__link { padding: 14px 12px; border-radius: 8px; border-bottom: 1px solid var(--line); }
   .nav__cta { margin: 16px 0 0; }
   .hamburger { display: flex; }
-  /* mobile hero: 9:16 centered animation card */
+  /* mobile hero: 9:16 centered animation card behind text */
   .hero__seq { height: 100vh; height: 100svh; }
-  .hero__sticky { height: 100vh; height: 100svh; min-height: 0; }
-  .hero__inner { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 0 16px; }
-  .hero__stage { position: relative; width: 100%; max-width: 480px; aspect-ratio: 1080/1920; height: auto;
+  .hero__sticky { height: 100vh; height: 100svh; min-height: 0; position: relative; }
+  .hero__inner { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 0 16px; position: relative; z-index: 2; }
+  .hero__stage { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 100%; max-width: 480px; aspect-ratio: 1080/1920; height: auto;
     border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,.5); z-index: 0; overflow: hidden; }
   .hero__stage::after { content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
-    background: linear-gradient(0deg, rgba(8,16,8,.92), rgba(8,16,8,.2) 40%, rgba(8,16,8,.4)); }
+    background: linear-gradient(0deg, rgba(8,16,8,.92), rgba(8,16,8,.4) 40%, rgba(8,16,8,.5)); }
   .hero__scrollcue { display: none; }
   /* Text: HIDDEN initially, shown via JS .show-mobile-text class */
   .hero__content.reveal,
