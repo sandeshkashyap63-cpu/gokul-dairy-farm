@@ -103,7 +103,7 @@
       var isAndroid = /Android/i.test(ua);
 
       /* ---- Frame selection ---- */
-      /* Mobile: ~20 keyframes. Desktop: all 215 */
+      /* Mobile: ~40 keyframes. Desktop: all 215 */
       var STEP = isMobile ? 5 : 1;
       var frameIndices = [];
       for (var fi = 0; fi < TOTAL_FRAMES; fi += STEP) frameIndices.push(fi);
@@ -116,212 +116,101 @@
       }
 
       /* ============================================================
-         MOBILE PATH: Auto-play milk pour using Canvas (no scroll scrubbing)
+         UNIVERSAL PATH: Auto-play milk pour using Canvas
          ============================================================ */
-      if (isMobile) {
-        /* Collapse the tall scroll section into a single full-screen hero */
-        seq.style.height = "auto";
-        function mSizeHero() {
-          if (stickyEl) stickyEl.style.height = (window.innerHeight || document.documentElement.clientHeight) + "px";
-        }
-        if (stickyEl) { stickyEl.style.position = "relative"; stickyEl.style.minHeight = "480px"; }
-        mSizeHero();
-        window.addEventListener("resize", mSizeHero);
-        window.addEventListener("orientationchange", function () { setTimeout(mSizeHero, 250); });
+      
+      /* Collapse the tall scroll section into a single full-screen hero */
+      seq.style.height = "auto";
+      function mSizeHero() {
+        if (stickyEl) stickyEl.style.height = (window.innerHeight || document.documentElement.clientHeight) + "px";
+      }
+      if (stickyEl) { stickyEl.style.position = "relative"; stickyEl.style.minHeight = "480px"; }
+      mSizeHero();
+      window.addEventListener("resize", mSizeHero);
+      window.addEventListener("orientationchange", function () { setTimeout(mSizeHero, 250); });
 
-        /* Hide the (now misleading) scroll cue */
-        if (hero) hero.classList.add("scrolled-in");
+      /* Hide the scroll cue since it auto-plays */
+      if (hero) hero.classList.add("scrolled-in");
 
-        /* Set up canvas for mobile auto-play */
-        var ctx = null;
-        try { ctx = canvas.getContext("2d", { alpha: false }); } catch(e) {}
-        if (!ctx) ctx = canvas.getContext("2d");
-        var dpr = 1; // Keep DPR 1 on mobile to prevent massive RAM usage
+      var ctx = null;
+      try { ctx = canvas.getContext("2d", { alpha: false }); } catch(e) {}
+      if (!ctx) ctx = canvas.getContext("2d");
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-        var mImgs = new Array(COUNT), mLoaded = 0, started = false;
-        for (var mi = 0; mi < COUNT; mi++) {
-          (function (idx) {
-            var im = new Image();
-            im.onload = im.onerror = function () { mLoaded++; maybeStart(); };
-            im.src = frameSrc(idx);
-            mImgs[idx] = im;
-          })(mi);
-        }
-
-        function mDraw(idx) {
-          if (!ctx) return;
-          if (idx < 0) idx = 0; else if (idx >= COUNT) idx = COUNT - 1;
-          var im = mImgs[idx];
-          
-          /* Find nearest loaded frame if current isn't ready */
-          if (!im || !im.complete || !im.naturalWidth) {
-            for (var d = 1; d < COUNT; d++) {
-              var lo = idx - d, hi = idx + d;
-              if (lo >= 0 && mImgs[lo] && mImgs[lo].complete && mImgs[lo].naturalWidth) { im = mImgs[lo]; break; }
-              if (hi < COUNT && mImgs[hi] && mImgs[hi].complete && mImgs[hi].naturalWidth) { im = mImgs[hi]; break; }
-            }
-          }
-          if (!im || !im.complete || !im.naturalWidth) return;
-
-          /* Size canvas properly */
-          var r = canvas.getBoundingClientRect();
-          var w = Math.round(r.width * dpr) || 1;
-          var h = Math.round(r.height * dpr) || 1;
-          if (canvas.width !== w || canvas.height !== h) {
-            canvas.width = w;
-            canvas.height = h;
-          }
-
-          var cw = canvas.width, ch = canvas.height, iw = im.naturalWidth, ih = im.naturalHeight;
-          if (cw <= 0 || ch <= 0 || iw <= 0 || ih <= 0) return;
-
-          /* object-fit: cover equivalent */
-          var s = Math.max(cw / iw, ch / ih);
-          var dw = iw * s, dh = ih * s;
-          var dx = (cw - dw) / 2;
-          var dy = (ch - dh) / 2;
-          
-          ctx.drawImage(im, dx, dy, dw, dh);
-        }
-
-        function revealText() { if (heroContent) heroContent.classList.add("show-mobile-text"); }
-
-        if (reduce) {
-          setTimeout(function() { mDraw(COUNT - 1); revealText(); }, 100); 
-          return; /* respect reduced motion: static final frame */
-        }
-
-        /* Play frames 0 -> last over ~2.8s, then reveal text + hold the brand frame */
-        var DURATION = 2800, startTs = 0, done = false;
-        function mLoop(ts) {
-          if (done) return;
-          if (!startTs) startTs = ts;
-          var p = (ts - startTs) / DURATION;
-          if (p >= 1) { mDraw(COUNT - 1); revealText(); done = true; return; }
-          mDraw(Math.round(p * (COUNT - 1)));
-          requestAnimationFrame(mLoop);
-        }
-        function maybeStart() {
-          if (started) return;
-          if (mLoaded >= Math.min(COUNT, 6)) { started = true; requestAnimationFrame(mLoop); }
-        }
-        
-        /* Safety nets: start even if onload is slow; always reveal text eventually */
-        setTimeout(function () { if (!started) { started = true; requestAnimationFrame(mLoop); } }, 1500);
-        setTimeout(revealText, 1500 + DURATION + 400);
-
-        /* Redraw on resize if animation is finished */
-        window.addEventListener("resize", function() {
-          if (done) mDraw(COUNT - 1);
-        });
-
-        return; /* skip desktop path */
+      var mImgs = new Array(COUNT), mLoaded = 0, started = false;
+      for (var mi = 0; mi < COUNT; mi++) {
+        (function (idx) {
+          var im = new Image();
+          im.onload = im.onerror = function () { mLoaded++; maybeStart(); };
+          im.src = frameSrc(idx);
+          mImgs[idx] = im;
+        })(mi);
       }
 
-      /* ============================================================
-         DESKTOP PATH: Canvas approach (unchanged, full quality)
-         ============================================================ */
-      var ctx = canvas.getContext("2d");
-      if (!ctx) return;
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      var imgs = new Array(COUNT);
-      var loaded = 0;
-      var currentProgress = 0;
-      var targetProgress = 0;
-      var lerpFactor = 0.08;
-      var lastDrawnFrame = -1;
+      function mDraw(idx) {
+        if (!ctx) return;
+        if (idx < 0) idx = 0; else if (idx >= COUNT) idx = COUNT - 1;
+        var im = mImgs[idx];
+        
+        /* Find nearest loaded frame if current isn't ready */
+        if (!im || !im.complete || !im.naturalWidth) {
+          for (var d = 1; d < COUNT; d++) {
+            var lo = idx - d, hi = idx + d;
+            if (lo >= 0 && mImgs[lo] && mImgs[lo].complete && mImgs[lo].naturalWidth) { im = mImgs[lo]; break; }
+            if (hi < COUNT && mImgs[hi] && mImgs[hi].complete && mImgs[hi].naturalWidth) { im = mImgs[hi]; break; }
+          }
+        }
+        if (!im || !im.complete || !im.naturalWidth) return;
 
-      function sizeCanvas() {
+        /* Size canvas properly */
         var r = canvas.getBoundingClientRect();
-        if (r.width < 1 || r.height < 1) return false;
-        var w = Math.max(1, Math.round(r.width * dpr));
-        var h = Math.max(1, Math.round(r.height * dpr));
+        var w = Math.round(r.width * dpr) || 1;
+        var h = Math.round(r.height * dpr) || 1;
         if (canvas.width !== w || canvas.height !== h) {
           canvas.width = w;
           canvas.height = h;
-          return true;
         }
-        return false;
-      }
 
-      function nearest(i) {
-        if (imgs[i] && imgs[i].complete && imgs[i].naturalWidth) return imgs[i];
-        for (var d = 1; d < COUNT; d++) {
-          if (i - d >= 0 && imgs[i - d] && imgs[i - d].complete && imgs[i - d].naturalWidth) return imgs[i - d];
-          if (i + d < COUNT && imgs[i + d] && imgs[i + d].complete && imgs[i + d].naturalWidth) return imgs[i + d];
-        }
-        return null;
-      }
-
-      function draw(i) {
-        var sizeChanged = sizeCanvas();
-        if (i === lastDrawnFrame && !sizeChanged) return;
-        var im = nearest(i); if (!im) return;
         var cw = canvas.width, ch = canvas.height, iw = im.naturalWidth, ih = im.naturalHeight;
-        if (cw <= 1 || ch <= 1 || iw <= 0 || ih <= 0) return;
-        var s = Math.max(cw / iw, ch / ih), dw = iw * s, dh = ih * s;
-        ctx.clearRect(0, 0, cw, ch);
-        ctx.drawImage(im, (cw - dw) / 2, (ch - dh) / 2, dw, dh);
-        lastDrawnFrame = i;
+        if (cw <= 0 || ch <= 0 || iw <= 0 || ih <= 0) return;
+
+        /* object-fit: cover equivalent */
+        var s = Math.max(cw / iw, ch / ih);
+        var dw = iw * s, dh = ih * s;
+        var dx = (cw - dw) / 2;
+        var dy = (ch - dh) / 2;
+        
+        ctx.drawImage(im, dx, dy, dw, dh);
       }
 
-      function getScrollProgress() {
-        var rect = seq.getBoundingClientRect();
-        var total = rect.height - pinHeight();
-        if (total <= 0) return 0;
-        var p = (-rect.top) / total;
-        return p < 0 ? 0 : p > 1 ? 1 : p;
-      }
-
-      function updateAnimation() {
-        currentProgress += (targetProgress - currentProgress) * lerpFactor;
-        if (Math.abs(targetProgress - currentProgress) < 0.0005) {
-          currentProgress = targetProgress;
-        }
-        var f = Math.round(currentProgress * (COUNT - 1));
-        draw(f);
-        requestAnimationFrame(updateAnimation);
-      }
-
-      function onScroll() {
-        targetProgress = getScrollProgress();
-        if (hero && (window.pageYOffset || window.scrollY) > 40) {
-          hero.classList.add("scrolled-in");
-        }
-      }
-
-      /* Load all frames */
-      for (var i = 0; i < COUNT; i++) {
-        (function (idx) {
-          var im = new Image();
-          im.onload = function () {
-            loaded++;
-            if (idx === 0) draw(0);
-            if (loaded === COUNT) {
-              targetProgress = getScrollProgress();
-              currentProgress = targetProgress;
-              draw(Math.round(currentProgress * (COUNT - 1)));
-            }
-          };
-          im.onerror = function() { loaded++; };
-          im.src = frameSrc(idx);
-          imgs[idx] = im;
-        })(i);
-      }
+      function revealText() { if (heroContent) heroContent.classList.add("show-mobile-text"); }
 
       if (reduce) {
-        seq.style.height = "100vh";
-        var t = setInterval(function () { if (nearest(COUNT - 1)) { draw(COUNT - 1); clearInterval(t); } }, 120);
-      } else {
-        window.addEventListener("scroll", onScroll, { passive: true });
-        window.addEventListener("resize", function () {
-          lastDrawnFrame = -1;
-          draw(Math.round(currentProgress * (COUNT - 1)));
-        });
-        onScroll();
-        currentProgress = targetProgress;
-        requestAnimationFrame(updateAnimation);
+        setTimeout(function() { mDraw(COUNT - 1); revealText(); }, 100); 
+        return; 
       }
+
+      /* Play frames 0 -> last over ~2.8s */
+      var DURATION = 2800, startTs = 0, done = false;
+      function mLoop(ts) {
+        if (done) return;
+        if (!startTs) startTs = ts;
+        var p = (ts - startTs) / DURATION;
+        if (p >= 1) { mDraw(COUNT - 1); revealText(); done = true; return; }
+        mDraw(Math.round(p * (COUNT - 1)));
+        requestAnimationFrame(mLoop);
+      }
+      function maybeStart() {
+        if (started) return;
+        if (mLoaded >= Math.min(COUNT, 6)) { started = true; requestAnimationFrame(mLoop); }
+      }
+      
+      setTimeout(function () { if (!started) { started = true; requestAnimationFrame(mLoop); } }, 1500);
+      setTimeout(revealText, 1500 + DURATION + 400);
+
+      window.addEventListener("resize", function() {
+        if (done) mDraw(COUNT - 1);
+      });
     })();
 
     /* ---- Scroll progress bar ---- */
