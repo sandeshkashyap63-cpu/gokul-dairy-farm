@@ -437,6 +437,7 @@ h1, h2, h3, h4 { font-family: var(--font-head); font-weight: 600; line-height: 1
 
   .about__inner, .story__inner, .community__inner, .contact__inner { grid-template-columns: 1fr; gap: 44px; }
   .story__media, .community__mascot, .about__media { max-width: 520px; }
+  .story__media img:not(.story__media--small) { aspect-ratio: 1 / 1; height: auto; object-position: center; }
   .about__milking { width: 160px; left: -6px; }
   .community__inner { text-align: left; }
   .community__mascot { order: -1; }
