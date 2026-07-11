@@ -43,7 +43,7 @@ Each visible string has a key (e.g. `"hero.title"`). Edit the value under the re
 The English (`en`) block is the source of truth and the fallback if a key is missing in another language.
 
 ## Phone / address / social (currently set)
-- Phone: +91 79000 00179, +91 86468 00025  ·  WhatsApp: +91 79000 00179
+- Phone: +91 79000 00179, +91 77770 70991  ·  WhatsApp: +91 79000 00179
 - Address: Kulvehri Road, Village Kunjpura, Near Shri Krishan Gopal Gaushala, Karnal – 132001, Haryana
 - Instagram: @gokuldairyfarmkarnal · Facebook & YouTube (@gokuldairy5855) linked in footer
 - Proprietor: Mr. Ravi
