@@ -61,5 +61,4 @@ then open http://localhost:8000
 - **Live URL:** https://sandeshkashyap63-cpu.github.io/gokul-dairy-farm/
 
 To publish updates: commit and `git push` — GitHub Pages rebuilds automatically in a minute or two.
-To point the real domain (gokuldairyfarm.com) here later, add a `CNAME` file with the domain and set
-the DNS records, or upload this folder's contents to the existing host's web root instead.
+Live at https://gokuldairyfarm.in — DNS + `CNAME` are already configured, GitHub Pages serves it over HTTPS.
