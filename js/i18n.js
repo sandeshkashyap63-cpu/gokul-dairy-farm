@@ -810,9 +810,17 @@
   }
 
   function init() {
-    var saved = "en";
-    try { saved = localStorage.getItem(STORE) || "en"; } catch (e) {}
-    apply(saved);
+    var chosen = null;
+    // 1. ?lang=xx in URL wins (Google Ads landing pages, share links)
+    try {
+      var urlLang = new URLSearchParams(window.location.search).get("lang");
+      if (urlLang && T[urlLang]) chosen = urlLang;
+    } catch (e) {}
+    // 2. Otherwise fall back to previously chosen language
+    if (!chosen) { try { chosen = localStorage.getItem(STORE); } catch (e) {} }
+    // 3. Default to English
+    if (!chosen || !T[chosen]) chosen = "en";
+    apply(chosen);
 
     var sw = document.getElementById("langSwitcher");
     var btn = document.getElementById("langBtn");
@@ -828,7 +836,14 @@
     if (menu) {
       menu.querySelectorAll("li").forEach(function (li) {
         li.addEventListener("click", function () {
-          apply(li.getAttribute("data-lang"));
+          var newLang = li.getAttribute("data-lang");
+          apply(newLang);
+          // Sync URL so what-you-see-is-what-you-share (bookmark/share reproduces current view)
+          try {
+            var u = new URL(window.location.href);
+            if (newLang === "en") u.searchParams.delete("lang"); else u.searchParams.set("lang", newLang);
+            history.replaceState(null, "", u.pathname + u.search + u.hash);
+          } catch (e) {}
           if (sw) sw.classList.remove("open");
           if (btn) btn.setAttribute("aria-expanded", "false");
         });
