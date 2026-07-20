@@ -29,13 +29,35 @@
   <!-- End Meta Pixel Code -->
 
   <!-- Track phone clicks as Meta "Contact" events -->
+  <!-- Track WhatsApp clicks as Meta "Lead" events -->
+  <!-- Track form submissions as Meta "CompleteRegistration" events -->
   <script>
   document.addEventListener('DOMContentLoaded', function () {
+    // Phone call clicks → Contact event
     document.querySelectorAll('a[href^="tel:"]').forEach(function (link) {
       link.addEventListener('click', function () {
         if (typeof fbq === 'function') fbq('track', 'Contact');
       });
     });
+
+    // WhatsApp clicks → Lead event
+    document.querySelectorAll('a[href*="wa.me"], a[href*="whatsapp"]').forEach(function (link) {
+      link.addEventListener('click', function () {
+        if (typeof fbq === 'function') fbq('track', 'Lead', {
+          content_name: 'WhatsApp Enquiry'
+        });
+      });
+    });
+
+    // Enquiry form submit → CompleteRegistration event
+    var form = document.getElementById('enquiryForm');
+    if (form) {
+      form.addEventListener('submit', function () {
+        if (typeof fbq === 'function') fbq('track', 'CompleteRegistration', {
+          content_name: 'Website Enquiry Form'
+        });
+      });
+    }
   });
   </script>
 
