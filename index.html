@@ -49,13 +49,14 @@
       });
     });
 
-    // Enquiry form submit → CompleteRegistration event
+    // Enquiry form submit → CompleteRegistration (Meta) + submit_lead_form conversion (Google Ads)
     var form = document.getElementById('enquiryForm');
     if (form) {
       form.addEventListener('submit', function () {
         if (typeof fbq === 'function') fbq('track', 'CompleteRegistration', {
           content_name: 'Website Enquiry Form'
         });
+        if (typeof gtag === 'function') gtag('event', 'conversion_event_submit_lead_form', {});
       });
     }
   });
